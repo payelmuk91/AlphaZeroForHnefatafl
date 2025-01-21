@@ -66,37 +66,37 @@ impl<Action: Eq + std::hash::Hash, State> Node<Action, State> {
     // }
 }
 
-struct Tree {
-    nodes: HashSet<State>, // replace with the actual type for the game states
-    root: Node,
-}
+// struct Tree {
+//     nodes: HashSet<State>, // replace with the actual type for the game states
+//     root: Node,
+// }
 
-impl Tree {
-    fn new(root_state: String) -> Self {
-        let mut nodes = HashMap::new();
-        let root = Node::new(root_state, None);
-        nodes.insert(0, root);
-        Tree { nodes, root: 0 }
-    }
+// impl Tree {
+//     fn new(root_state: String) -> Self {
+//         let mut nodes = HashMap::new();
+//         let root = Node::new(root_state, None);
+//         nodes.insert(0, root);
+//         Tree { nodes, root: 0 }
+//     }
 
-    // Cannot trust. 
-    fn select(&self) -> usize {
-        let mut node_id = self.root;
-        while !self.nodes[&node_id].children.is_empty() {
-            node_id = *self.nodes[&node_id]
-                .children
-                .iter()
-                .max_by(|&&a, &&b| {
-                    self.nodes[&a]
-                        .uct_value(total_visits)
-                        .partial_cmp(&self.nodes[&b].uct_value(total_visits))
-                        .unwrap()
-                })
-                .unwrap();
-        }
-        node_id
-    }
-}
+//     // Cannot trust. 
+//     fn select(&self) -> usize {
+//         let mut node_id = self.root;
+//         while !self.nodes[&node_id].children.is_empty() {
+//             node_id = *self.nodes[&node_id]
+//                 .children
+//                 .iter()
+//                 .max_by(|&&a, &&b| {
+//                     self.nodes[&a]
+//                         .uct_value(total_visits)
+//                         .partial_cmp(&self.nodes[&b].uct_value(total_visits))
+//                         .unwrap()
+//                 })
+//                 .unwrap();
+//         }
+//         node_id
+//     }
+// }
 
 // performs MCTS search until a new node is found. String should be replaced with the actual type for the actions
 fn search(&self) -> (Node, String) {
@@ -126,7 +126,38 @@ fn search(&self) -> (Node, String) {
         }
         node = node.children.get(&next_action).unwrap();
     }
-} 
+}
+
+fn search(game: Game, node: Node) -> f64 {
+
+    if game.is_terminal(node.state) {
+        let reward = game.reward(Node.state);
+        return -reward;
+    }
+
+    let action = node.valid_actions
+            .iter()
+            .max_by(|a, b| {
+                node.uct_value(a).partial_cmp(node.uct_value(b)).unwrap()
+            })
+            .unwrap();
+    let next_state = game.get_next_state(action);
+        
+    if !node.children.contains_key(action) {
+        let (prob, reward) = nn.predict(next_state); //TODO;  use different heads depending on who's playing
+        expand(node, action, next_state);
+        return -reward
+    }
+
+    let next_node = node.children(action);
+    let reward = search(game, next_node);
+
+    node.actions_Qs(action) = (node.actions_counts(action) * node.actions_Qs(actions) + reward) / (node.actions_counts(action) + 1.0);
+    node.actions_counts(action) += 1.0;
+    node.visits += 1.0;
+    return -reward
+    
+}
 
 // fn expand(&mut self, node_id: usize, new_state: String) -> usize {
 //     let new_node_id = self.nodes.len();
@@ -172,6 +203,7 @@ fn expand(parent: &mut Node<Action, State>, action: &Action, next_state: &State)
 //     }
 // }
 
+// We might not need this (incorporated into fn search)
 fn backup(leaf_node: Node<Action, State>, reward: f64) {
     let mut node: Node<Action, State> = leaf_node;
     while let Some((parent, action)) = node.parent {
