@@ -28,21 +28,23 @@ impl Hnefatafl {
     pub fn new() -> Self {
         let tafl = Tafl::new(7);
         
-        
+        // 2 for corner, 1 for everything else
         let mut board = vec![vec![1; 7]; 7];
         let corners = vec![(0, 0), (0, 6), (6, 0), (6, 6)];
         for &(x, y) in &corners {
             board[x][y] = 2;
         }
-        let pieces = tafl.expand_eighth(7, vec![
-            [2, 0, -1], [3, 0, -1], [4, 0, -1],
-            [0, 2, -1], [0, 3, -1],[0, 4, -1],
-            [2, 6, -1], [3, 6, -1], [4, 6, -1],
-            [6, 2, -1], [6, 3, -1],[6, 4, -1],
+        
+        // piece position: [x,y,piece type] 1 for defender, -1 for attacker, 2 for king
+        let pieces = vec![
+            [3, 0, -1], [3, 1, -1], 
+            [0, 3, -1], [1, 3, -1],
+            [3, 5, -1], [3, 6, -1],
+            [5, 3, -1], [6, 3, -1],
 
             [2, 3, 1], [3, 2, 1], [3, 4, 1], [4, 3, 1],
             [3,3,2]
-        ]);
+        ];
         Hnefatafl { tafl: Tafl { size: 7, board, pieces } }
     }
 }
