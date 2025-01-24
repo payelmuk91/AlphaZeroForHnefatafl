@@ -4,4 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+primitive-types = "0.13.1"
 tch = "0.18.1"
+
+[features]
+demo = []
+
+[lib]
+name = "hnefatafl"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hnefatafl-demo"
+path = "src/main.rs"
+required-features = ["demo"]
