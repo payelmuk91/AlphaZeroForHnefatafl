@@ -7,6 +7,7 @@ use hnefatafl::game::GameOutcome::{Draw, Win};
 use hnefatafl::game::GameStatus::Over;
 use hnefatafl::game::{Game, SmallBasicGame};
 use hnefatafl::play::Play;
+use hnefatafl::game::tiles::Tile;
 
 fn input(prompt: &str) -> std::io::Result<String> {
     println!("{prompt}");
@@ -27,6 +28,27 @@ fn get_play() -> Play {
         }
         
     }
+}
+
+fn get_all_possible_moves<T: BoardState>(game: &Game<T>) -> Vec<Play> {
+    let mut possible_moves = Vec::new();
+    for tile in game.state.board.iter_occupied(game.state.side_to_play) {
+        if let Ok(mut iter) = game.iter_plays(tile) {
+            while let Some(valid_play) = iter.next() {
+                possible_moves.push(valid_play.play);
+            }
+        }
+    }
+    possible_moves
+}
+
+fn validate_moves<T: BoardState>(game: &Game<T>, possible_moves: Vec<Play>) -> Vec<u8> {
+    possible_moves.iter().map(|play| {
+        match game.logic.validate_play(*play, &game.state) {
+            Ok(_) => 1,
+            Err(_) => 0,
+        }
+    }).collect()
 }
 
 fn main() {
@@ -57,3 +79,4 @@ fn main() {
         }
     }
 }
+
