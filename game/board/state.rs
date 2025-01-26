@@ -366,6 +366,8 @@ mod tests {
                 "...t..."
             ].join("\n")
         );
+        println!("{:?}", from_fen);
+        println!("{:?}", from_display_str);
         assert_eq!(from_fen, from_display_str);
     }
 

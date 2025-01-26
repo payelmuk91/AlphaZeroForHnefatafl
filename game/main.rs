@@ -51,6 +51,87 @@ fn validate_moves<T: BoardState>(game: &Game<T>, possible_moves: Vec<Play>) -> V
     }).collect()
 }
 
+
+fn board_to_matrix<T: BoardState>(game_state: &GameState<T>) -> Vec<Vec<u8>> {
+    let side_len = game_state.board.side_len();
+    let mut matrix = vec![vec![0; side_len as usize]; side_len as usize];
+
+    // Initialize special tiles
+    matrix[0][0] = 20;
+    matrix[0][(side_len - 1) as usize] = 20;
+    matrix[(side_len - 1) as usize][0] = 20;
+    matrix[(side_len - 1) as usize][(side_len - 1) as usize] = 20;
+    matrix[(side_len / 2) as usize][(side_len / 2) as usize] = 30;
+
+    // Iterate over the board and add piece values
+    for row in 0..side_len {
+        for col in 0..side_len {
+            let tile = Tile::new(row, col);
+            if let Some(piece) = game_state.board.get_piece(tile) {
+                let value = match piece.piece_type {
+                    PieceType::Soldier => 1,
+                    PieceType::Knight => 2,
+                    PieceType::King => 5,
+                    _ => 0,
+                };
+                matrix[row as usize][col as usize] += value;
+            }
+        }
+    }
+
+    matrix
+}
+
+
+fn write_to_file(
+    file_path: &str,
+    matrix: Vec<Vec<u8>>,
+    vector: Vec<u8>,
+    value1: u8,
+    value2: u8,
+    max_entries: usize,
+) -> std::io::Result<()> {
+    let path = Path::new(file_path);
+    let mut entries = Vec::new();
+
+    // Read existing entries if the file exists
+    if path.exists() {
+        let content = read_to_string(file_path)?;
+        entries = content.lines().map(|line| line.to_string()).collect();
+    }
+
+    // Check if the number of entries exceeds max_entries
+    if entries.len() >= max_entries {
+        entries.remove(0); // Remove the oldest entry
+    }
+
+    // Create a new entry
+    let new_entry = format!(
+        "{}\n{}\n{}\n{}",
+        matrix
+            .iter()
+            .map(|row| row.iter().map(|&v| v.to_string()).collect::<Vec<_>>().join(","))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        vector.iter().map(|&v| v.to_string()).collect::<Vec<_>>().join(","),
+        value1,
+        value2
+    );
+
+    // Add the new entry to the entries list
+    entries.push(new_entry);
+
+    // Write all entries back to the file
+    let file = OpenOptions::new().write(true).create(true).truncate(true).open(file_path)?;
+    let mut writer = BufWriter::new(file);
+    for entry in entries {
+        writeln!(writer, "{}", entry)?;
+    }
+
+    Ok(())
+}
+
+
 fn main() {
     println!("hnefatafl-rs demo");
     let mut game: SmallBasicGame = Game::new(
